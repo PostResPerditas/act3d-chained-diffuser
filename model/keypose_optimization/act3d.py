@@ -78,7 +78,8 @@ class Act3D(nn.Module):
         if self.image_size == (128, 128):
             # Coarse RGB features are the 2nd layer of the feature pyramid at 1/4 resolution (32x32)
             # Fine RGB features are the 1st layer of the feature pyramid at 1/2 resolution (64x64)
-            self.coarse_feature_map = ['res2', 'res1', 'res1', 'res1']
+            # self.coarse_feature_map = ['res2', 'res1', 'res1', 'res1']
+            self.feature_map_pyramid = ['res2', 'res1', 'res1', 'res1']
             self.downscaling_factor_pyramid = [4, 2, 2, 2]
         elif self.image_size == (256, 256):
             # Coarse RGB features are the 3rd layer of the feature pyramid at 1/8 resolution (32x32)
@@ -373,11 +374,25 @@ class Act3D(nn.Module):
         visible_rgb_features_pyramid = []
         visible_rgb_pos_pyramid = []
         visible_pcd_pyramid = []
-
+        
         for i in range(self.num_sampling_level):
             visible_rgb_features_i = visible_rgb_features[self.feature_map_pyramid[i]]
+            # visible_pcd_i = F.interpolate(
+            #     visible_pcd, scale_factor=1. / self.downscaling_factor_pyramid[i], mode='bilinear')
+            
             visible_pcd_i = F.interpolate(
-                visible_pcd, scale_factor=1. / self.downscaling_factor_pyramid[i], mode='bilinear')
+                visible_pcd,
+                size=visible_rgb_features_i.shape[-2:],
+                mode="bilinear",
+                align_corners=False,
+            )
+
+            assert visible_pcd_i.shape[-2:] == visible_rgb_features_i.shape[-2:], (
+                "RGB/PCD feature size mismatch: "
+                f"rgb={visible_rgb_features_i.shape}, "
+                f"pcd={visible_pcd_i.shape}"
+            )
+
             h, w = visible_pcd_i.shape[-2:]
             visible_pcd_i = einops.rearrange(
                 visible_pcd_i, "(bt ncam) c h w -> bt (ncam h w) c", ncam=num_cameras)

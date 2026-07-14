@@ -83,7 +83,9 @@ def load_models(args):
     print('Trajectory gripper workspace')
     diffusion_gripper_loc_bounds = get_gripper_loc_bounds(
         args.gripper_loc_bounds_file,
-        task=None, buffer=0.04
+        # task=None,
+        task=task,
+        buffer=0.04
     )
     print('Keypose gripper workspace')
     act3d_gripper_loc_bounds = get_gripper_loc_bounds(
@@ -101,7 +103,8 @@ def load_models(args):
             num_query_cross_attn_layers=6,
             use_instruction=True,
             use_goal=True,
-            use_goal_at_test=False,
+            # use_goal_at_test=False,
+            use_goal_at_test=True,
             feat_scales_to_use=1,
             attn_rounds=1,
             weight_tying=True,
@@ -125,7 +128,8 @@ def load_models(args):
             num_ghost_points=10000,
             num_ghost_points_val=10000,
             weight_tying=True,
-            gp_emb_tying=False,
+            # gp_emb_tying=False,
+            gp_emb_tying=True,
             num_sampling_level=3,
             fine_sampling_ball_diameter=0.16,
             regress_position_offset=False,
@@ -138,7 +142,8 @@ def load_models(args):
         diffusion_model_dict = torch.load(args.diff_checkpoint, map_location="cpu")
         diffusion_model_dict_weight = {}
         for key in diffusion_model_dict["weight"]:
-            _key = key[7:]
+            # _key = key[7:]
+            _key = key[7:] if key.startswith("module.") else key
             diffusion_model_dict_weight[_key] = diffusion_model_dict["weight"][key]
         diffusion_model.load_state_dict(diffusion_model_dict_weight)
         diffusion_model.eval()
@@ -147,7 +152,8 @@ def load_models(args):
         act3d_model_dict = torch.load(args.act3d_checkpoint, map_location="cpu")
         act3d_model_dict_weight = {}
         for key in act3d_model_dict["weight"]:
-            _key = key[7:]
+            # _key = key[7:]
+            _key = key[7:] if key.startswith("module.") else key
             act3d_model_dict_weight[_key] = act3d_model_dict["weight"][key]
         act3d_model.load_state_dict(act3d_model_dict_weight)
         act3d_model.eval()

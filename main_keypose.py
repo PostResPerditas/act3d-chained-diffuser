@@ -21,7 +21,8 @@ from model import Act3D
 
 class Arguments(tap.Tap):
     # master_port: str = '29500'
-    local_rank: int
+    # local_rank: int
+    local_rank: int = 0
     cameras: Tuple[str, ...] = ("wrist", "left_shoulder", "right_shoulder")
     image_size: str = "256,256"
     max_episodes_per_task: int = 100
@@ -486,6 +487,9 @@ if __name__ == '__main__':
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     # Arguments
     args = Arguments().parse_args()
+    args.local_rank = int(
+        os.environ.get("LOCAL_RANK", args.local_rank)
+    )
     print("Arguments:")
     print(args)
     print("-" * 100)

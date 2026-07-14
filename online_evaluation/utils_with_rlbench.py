@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import einops
+import time
 
 from rlbench.observation_config import ObservationConfig, CameraConfig
 from rlbench.environment import Environment
@@ -62,8 +63,10 @@ class Mover:
         reward = 0
 
         for try_id in range(self._max_tries):
+            # obs, reward, terminate, other_obs = self._task.step(
+            #     action, collision_checking=collision_checking)
             obs, reward, terminate, other_obs = self._task.step(
-                action, collision_checking=collision_checking)
+                action)
             if other_obs == []:
                 other_obs = [obs]
             for o in other_obs:
@@ -451,7 +454,13 @@ class RLBenchEnv:
                 task=task,
                 max_steps=max_steps,
                 variation=variation,
-                num_demos=num_demos // len(task_variations) + 1,
+                # num_demos=num_demos // len(task_variations) + 1,
+                num_demos=max(
+                    1,
+                    (
+                        num_demos + len(task_variations) - 1
+                    ) // len(task_variations)
+                ),
                 log_dir=log_dir,
                 actioner=actioner,
                 max_tries=max_tries,
@@ -588,6 +597,7 @@ class RLBenchEnv:
 
                 if verbose:
                     print(f"Step {step_id}", action)
+                    # time.sleep(2.0)
                 if self.exec168:
                     output['trajectory'] = output['trajectory'][:, :8]
 

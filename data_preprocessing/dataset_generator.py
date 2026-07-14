@@ -49,7 +49,10 @@ flags.DEFINE_integer('episodes_per_task', 10,
                      'The number of episodes to collect per task.')
 flags.DEFINE_integer('variations', -1,
                      'Number of variations to collect per task. -1 for all.')
-
+flags.DEFINE_integer(
+    'offset', 0,
+    'Starting variation index.'
+)
 
 VARIATIONS_ALL_FOLDER = 'all_variations'
 VARIATION_NUMBER = 'variation_number.pkl'
@@ -394,6 +397,7 @@ def run_all_variations(i, lock, task_index, variation_count, results,
                 # If we have reached the required number of variations for this
                 # task, then move on to the next task.
                 variation_count.value = my_variation_count = FLAGS.offset
+                # variation_count.value = my_variation_count = getattr(FLAGS, 'offset', 0)
                 task_index.value += 1
 
             variation_count.value += 1
@@ -421,7 +425,8 @@ def run_all_variations(i, lock, task_index, variation_count, results,
         # If we are generating data for more than one variation, divide
         # the number of episodes per task by the number of variations
         # We generate more episode than needed, we can always ignore some later
-        episodes_per_taskvar = (FLAGS.episodes_per_task // var_target) + 1
+        # episodes_per_taskvar = (FLAGS.episodes_per_task // var_target) - 1
+        episodes_per_taskvar = (FLAGS.episodes_per_task + var_target - 1) // var_target
 
         abort_variation = False
         for ex_idx in range(episodes_per_taskvar):
@@ -466,7 +471,7 @@ def run_all_variations(i, lock, task_index, variation_count, results,
                 break
 
         # with lock:
-        task_index.value += 1
+        # task_index.value += 1
 
     results[i] = tasks_with_problems
     rlbench_env.shutdown()
@@ -503,7 +508,8 @@ def main(argv):
     )
 
     print('Data collection done!')
-    for i in range(FLAGS.processes):
+    # for i in range(FLAGS.processes):
+    for i in sorted(result_dict.keys()):
         print(result_dict[i])
 
 
