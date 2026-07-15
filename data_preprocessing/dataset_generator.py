@@ -31,8 +31,16 @@ import numpy as np
 from absl import app
 from absl import flags
 
+from rlbench.const import SUPPORTED_ROBOTS
+
 FLAGS = flags.FLAGS
 
+flags.DEFINE_enum(
+    "robot_setup",
+    "panda",
+    list(SUPPORTED_ROBOTS.keys()),
+    "RLBench robot setup used for demo generation.",
+)
 flags.DEFINE_string('save_path',
                     '/tmp/rlbench_data/',
                     'Where to save the demos.')
@@ -343,6 +351,7 @@ def run_all_variations(i, lock, task_index, variation_count, results,
 
     obs_config = ObservationConfig()
     obs_config.set_all(True)
+    obs_config.gripper_touch_forces = False
     obs_config.right_shoulder_camera.image_size = img_size
     obs_config.left_shoulder_camera.image_size = img_size
     obs_config.overhead_camera.image_size = img_size
@@ -373,7 +382,9 @@ def run_all_variations(i, lock, task_index, variation_count, results,
     rlbench_env = CustomizedEnvironment(
         action_mode=MoveArmThenGripper(JointVelocity(), Discrete()),
         obs_config=obs_config,
-        headless=True)
+        headless=True,
+        robot_setup=FLAGS.robot_setup,)
+    print(f"Generating data with robot_setup={FLAGS.robot_setup}")
     rlbench_env.launch()
 
     task_env = None

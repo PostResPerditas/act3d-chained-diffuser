@@ -5,6 +5,7 @@ from typing import Type, List
 from pyrep import PyRep
 from pyrep.objects import VisionSensor
 from pyrep.robots.arms.panda import Panda
+from pyrep.const import Verbosity
 
 from rlbench import utils
 from rlbench.action_modes.action_mode import ActionMode
@@ -91,7 +92,7 @@ class Environment(object):
         if self._pyrep is not None:
             raise RuntimeError('Already called launch!')
         self._pyrep = PyRep()
-        self._pyrep.launch(join(DIR_PATH, TTT_FILE), headless=self._headless)
+        self._pyrep.launch(join(DIR_PATH, TTT_FILE), headless=self._headless, verbosity=Verbosity.NONE)
 
         arm_class, gripper_class, _ = SUPPORTED_ROBOTS[
             self._robot_setup]

@@ -6,16 +6,23 @@ cd "$root"
 export PYTHONPATH="$root:${PYTHONPATH:-}"
 
 task=reach_target
-exp=reach_target_smoke
+# exp=reach_target_smoke
 
 # 在线评估必须读取 RLBench raw validation demos
-data_dir=$root/datasets/raw/reach_target_val20_128
+# data_dir=$root/datasets/raw/reach_target_val20_128
+data_dir=${DATA_DIR:-$root/datasets/raw/reach_target_val20_128}
+robot_setup=${ROBOT_SETUP:-panda}
+offline=${OFFLINE:-0}
 
 instructions=$root/datasets/artifacts/reach_target/instructions_reach_target.pkl
-bounds=$root/datasets/artifacts/reach_target_100x20_128/reach_target_location_bounds.json
+# bounds=$root/datasets/artifacts/reach_target_100x20_128/reach_target_location_bounds.json
+# act3d_checkpoint=$root/train_logs/act3d_reach_target/train100_val20_128/best.pth
+# diff_checkpoint=$root/train_logs/trajectory_reach_target/train100_val20_128/best.pth
 
-act3d_checkpoint=$root/train_logs/act3d_reach_target/train100_val20_128/best.pth
-diff_checkpoint=$root/train_logs/trajectory_reach_target/train100_val20_128/best.pth
+bounds=${BOUNDS_FILE:-$root/datasets/artifacts/reach_target_100x20_128/reach_target_location_bounds.json}
+act3d_checkpoint=${ACT3D_CHECKPOINT:-$root/train_logs/act3d_reach_target/train100_val20_128/best.pth}
+diff_checkpoint=${DIFF_CHECKPOINT:-$root/train_logs/trajectory_reach_target/train100_val20_128/best.pth}
+exp=${EXP_NAME:-reach_target_evaluation}
 
 image_size=128,128
 cameras=left_shoulder,right_shoulder,wrist
@@ -27,6 +34,16 @@ interpolation_length=50
 # 可通过环境变量切换评估模式
 predict_keypose=${PREDICT_KEYPOSE:-1}
 predict_traj=${PREDICT_TRAJ:-1}
+
+echo "Evaluation configuration:"
+echo "  robot_setup=$robot_setup"
+echo "  data_dir=$data_dir"
+echo "  num_episodes=$num_episodes"
+echo "  predict_keypose=$predict_keypose"
+echo "  predict_traj=$predict_traj"
+echo "  bounds=$bounds"
+echo "  act3d_checkpoint=$act3d_checkpoint"
+echo "  diff_checkpoint=$diff_checkpoint"
 
 headless=${HEADLESS:-0}
 if [[ -z "${DISPLAY:-}" ]]; then
@@ -96,7 +113,7 @@ python online_evaluation/eval1.py \
     --act3d_use_instruction 0 \
     --dense_interpolation 1 \
     --interpolation_length "$interpolation_length" \
-    --offline 0 \
+    --offline "$offline" \
     --headless "$headless" \
     --max_tries "$max_tries" \
     --max_steps -1 \

@@ -68,6 +68,8 @@ class Arguments(tap.Tap):
     use_instruction: int = 1
     act3d_use_instruction: int = 0
 
+    robot_setup: str = "panda"
+
 
 def load_models(args):
     device = torch.device(args.device)
@@ -182,7 +184,8 @@ if __name__ == "__main__":
 
     # Load models
     traj_model, keypose_model = load_models(args)
-
+    robot_setup = os.environ.get("ROBOT_SETUP", "panda")
+    
     # Load RLBench environment
     env = RLBenchEnv(
         data_path=args.data_dir,
@@ -193,7 +196,8 @@ if __name__ == "__main__":
         apply_pc=True,
         headless=bool(args.headless),
         apply_cameras=args.cameras,
-        collision_checking=bool(args.collision_checking)
+        collision_checking=bool(args.collision_checking),
+        robot_setup=robot_setup
     )
 
     instruction = load_instructions(args.instructions)

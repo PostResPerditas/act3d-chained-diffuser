@@ -275,7 +275,8 @@ class RLBenchEnv:
         headless=False,
         apply_cameras=("left_shoulder", "right_shoulder", "wrist", "front"),
         fine_sampling_ball_diameter=None,
-        collision_checking=False
+        collision_checking=False,
+        robot_setup="panda"
     ):
 
         # setup required inputs
@@ -303,7 +304,7 @@ class RLBenchEnv:
             )
         self.env = Environment(
             self.action_mode, str(data_path), self.obs_config,
-            headless=headless
+            headless=headless, robot_setup=robot_setup
         )
         self.image_size = image_size
         self.exec168 = exec168
@@ -537,7 +538,11 @@ class RLBenchEnv:
             reward = None
             max_reward = 0.0
             gt_keyframe_actions, _, gt_trajectory_masks = actioner.get_action_from_demo(demo)
-            if offline:
+            # if offline:
+            #     max_steps = len(gt_keyframe_actions)
+            if not actioner._predict_keypose:
+                max_steps = len(gt_keyframe_actions)
+            elif offline:
                 max_steps = len(gt_keyframe_actions)
 
             for step_id in range(max_steps):

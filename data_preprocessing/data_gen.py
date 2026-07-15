@@ -31,6 +31,7 @@ class Arguments(tap.Tap):
     num_workers: int = 0
     store_intermediate_actions: int = 1
 
+    debug_keypoints: int = 0
 
 def get_attn_indices_from_demo(
     task_str: str, demo: Demo, cameras: Tuple[str, ...]
@@ -40,14 +41,131 @@ def get_attn_indices_from_demo(
     frames.insert(0, 0)
     return [{cam: obs_to_attn(demo[f], cam) for cam in cameras} for f in frames]
 
+def quaternion_angle_deg(q1, q2) -> float:
+    q1 = np.asarray(q1, dtype=np.float64)
+    q2 = np.asarray(q2, dtype=np.float64)
+
+    q1 /= np.linalg.norm(q1) + 1e-12
+    q2 /= np.linalg.norm(q2) + 1e-12
+
+    dot = np.clip(
+        np.abs(np.dot(q1, q2)),
+        0.0,
+        1.0,
+    )
+
+    return float(
+        np.degrees(2.0 * np.arccos(dot))
+    )
+
+
+def print_keypoint_debug(
+    task_str: str,
+    variation: int,
+    episode: int,
+    demo: Demo,
+    keypoints: List[int],
+) -> None:
+    final_pose = np.asarray(
+        demo._observations[-1].gripper_pose,
+        dtype=np.float64,
+    )
+
+    print(
+        f"\n[Keypoint Debug] "
+        f"task={task_str}, "
+        f"variation={variation}, "
+        f"episode={episode}"
+    )
+
+    print(
+        f"  demo_length={len(demo)}, "
+        f"keypoints={keypoints}, "
+        f"num_keypoints={len(keypoints)}"
+    )
+
+    previous_frame = 0
+
+    for keypoint_id, frame_id in enumerate(keypoints):
+        obs = demo._observations[frame_id]
+        previous_obs = demo._observations[previous_frame]
+
+        pose = np.asarray(
+            obs.gripper_pose,
+            dtype=np.float64,
+        )
+
+        previous_pose = np.asarray(
+            previous_obs.gripper_pose,
+            dtype=np.float64,
+        )
+
+        delta_position = np.linalg.norm(
+            pose[:3] - previous_pose[:3]
+        )
+
+        delta_rotation = quaternion_angle_deg(
+            pose[3:7],
+            previous_pose[3:7],
+        )
+
+        distance_to_final = np.linalg.norm(
+            pose[:3] - final_pose[:3]
+        )
+
+        rotation_to_final = quaternion_angle_deg(
+            pose[3:7],
+            final_pose[3:7],
+        )
+
+        print(
+            f"  keypoint[{keypoint_id}]"
+            f" frame={frame_id},"
+            f" gap={frame_id - previous_frame},"
+            f" terminal={frame_id == len(demo) - 1},"
+            f" gripper={float(obs.gripper_open):.1f}"
+        )
+
+        print(
+            f"    position="
+            f"{np.round(pose[:3], 4).tolist()}"
+        )
+
+        print(
+            f"    delta_from_previous:"
+            f" position={delta_position:.4f} m,"
+            f" rotation={delta_rotation:.2f} deg"
+        )
+
+        print(
+            f"    distance_to_final:"
+            f" position={distance_to_final:.4f} m,"
+            f" rotation={rotation_to_final:.2f} deg"
+        )
+
+        previous_frame = frame_id
 
 def get_observation(task_str: str, variation: int,
                     episode: int, env: RLBenchEnv,
-                    store_intermediate_actions: bool):
+                    store_intermediate_actions: bool,debug_keypoints: bool = False):
     demos = env.get_demo(task_str, variation, episode)
     demo = demos[0]
 
-    key_frame = keypoint_discovery(demo)
+    # key_frame = keypoint_discovery(demo)
+    # key_frame.insert(0, 0)
+
+    raw_keyframes = keypoint_discovery(demo)
+    if debug_keypoints:
+        print_keypoint_debug(
+            task_str=task_str,
+            variation=variation,
+            episode=episode,
+            demo=demo,
+            keypoints=raw_keyframes,
+        )
+
+    # 使用副本，避免修改 raw_keyframes
+    key_frame = list(raw_keyframes)
     key_frame.insert(0, 0)
 
     keyframe_state_ls = []
@@ -108,7 +226,7 @@ class Dataset(torch.utils.data.Dataset):
          keyframe_action_ls,
          intermediate_action_ls) = get_observation(
             task, variation, episode, self.env,
-            bool(args.store_intermediate_actions)
+            bool(args.store_intermediate_actions), bool(args.debug_keypoints)
         )
 
         state_ls = einops.rearrange(

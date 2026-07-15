@@ -28,6 +28,8 @@ class Arguments(tap.Tap):
     validate_num_episodes: int = 0
     validate_successful_demos: int = 1
 
+    robot_setup: str = "panda"
+
 
 if __name__ == "__main__":
     args = Arguments().parse_args()
@@ -62,6 +64,7 @@ if __name__ == "__main__":
 
         max_eps_dict = load_episodes()["max_episode_length"]
 
+        # for split in [args.train_dir, args.val_dir]:
         for split in [args.train_dir]:
             print()
             print()
@@ -76,6 +79,7 @@ if __name__ == "__main__":
                 apply_pc=True,
                 headless=bool(args.headless),
                 apply_cameras=args.cameras,
+                robot_setup=args.robot_setup,
             )
 
             task_dirs = glob.glob(f"{args.raw_dir}/{split}/*")

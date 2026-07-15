@@ -296,7 +296,8 @@ class RLBenchEnv:
         headless=False,
         apply_cameras=("left_shoulder", "right_shoulder", "wrist", "front"),
         fine_sampling_ball_diameter=None,
-        collision_checking=False
+        collision_checking=False,
+        robot_setup="panda",
     ):
 
         # setup required inputs
@@ -306,7 +307,7 @@ class RLBenchEnv:
         self.apply_pc = apply_pc
         self.apply_cameras = apply_cameras
         self.fine_sampling_ball_diameter = fine_sampling_ball_diameter
-
+        self.robot_setup = robot_setup
         # setup RLBench environments
         self.obs_config = self.create_obs_config(
             image_size, apply_rgb, apply_depth, apply_pc, apply_cameras
@@ -325,7 +326,7 @@ class RLBenchEnv:
             )
         self.env = Environment(
             self.action_mode, str(data_path), self.obs_config,
-            headless=headless
+            headless=headless, robot_setup=robot_setup
         )
         self.image_size = image_size
 
